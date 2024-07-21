@@ -19,6 +19,5 @@ public class ModifyNameReq {
     @NotBlank(message = "用户名不能为空")
     @Length(max = 6,message = "用户名长度不能超过6个字符")
     private String name;
-    @NotNull(message = "用户id不能为空")
-    private Integer uid;
+
 }

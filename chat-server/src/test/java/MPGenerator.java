@@ -33,7 +33,7 @@ public class MPGenerator {
         //全局配置
         GlobalConfig globalConfig = new GlobalConfig();
         globalConfig.setOpen(false);
-        //todo 要改输出路径
+        // 要改输出路径
        // globalConfig.setOutputDir(System.getProperty("user.dir") + "/mallchat-chat-server/src/main/java");
         globalConfig.setOutputDir("D:\\code\\jingmiChat\\chat-server\\src\\main\\java");
         //设置作者名字
@@ -61,7 +61,7 @@ public class MPGenerator {
         strategyConfig.setColumnNaming(NamingStrategy.underline_to_camel);
         //字段和表注解
         strategyConfig.setEntityTableFieldAnnotationEnable(true);
-        //todo 这里修改需要自动生成的表结构
+        //这里修改需要自动生成的表结构
         strategyConfig.setInclude(
                 "item_config",
                 "user_backpack"
@@ -80,7 +80,7 @@ public class MPGenerator {
         autoGenerator.execute();
 
     }
-    //todo 这里修改你的数据源
+    // 这里修改你的数据源
     public static void assembleDev(DataSourceConfig dataSourceConfig) {
         dataSourceConfig.setDriverName("com.mysql.cj.jdbc.Driver");
         dataSourceConfig.setUsername("root");

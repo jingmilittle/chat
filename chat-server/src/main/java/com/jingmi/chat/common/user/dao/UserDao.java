@@ -3,7 +3,9 @@ package com.jingmi.chat.common.user.dao;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.generator.config.IFileCreate;
 import com.jingmi.chat.common.common.exception.BusinessException;
+import com.jingmi.chat.common.common.utils.AssertUtil;
 import com.jingmi.chat.common.user.domain.entity.User;
+import com.jingmi.chat.common.user.domain.entity.UserBackpack;
 import com.jingmi.chat.common.user.domain.entity.vo.resp.UserInfoResp;
 import com.jingmi.chat.common.user.domain.enums.ItemEnum;
 import com.jingmi.chat.common.user.domain.vo.ModifyNameReq;
@@ -52,13 +54,25 @@ public class UserDao extends ServiceImpl<UserMapper, User> implements UserServic
     *改名字
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void modifyName(String name, Long uid) {
         User oldUser = getUserByName(name);
-        if (Objects.nonNull(oldUser)){
-            throw new BusinessException("用户名已存在");
+        AssertUtil.isEmpty(oldUser,"名字已存在,请换一个");
+        UserBackpack changeNameCard = userBackpackDao.getFirstValidItemByItemId(uid, ItemEnum.MODIFY_NAME_CARD.getId());
+        AssertUtil.isNotEmpty(changeNameCard,"改名卡不足");
+        boolean isSuccess = userBackpackDao.userItem(changeNameCard);
+        if (isSuccess){
+            this.changeName(name,uid);
         }
 
 
+    }
+    private boolean changeName(String name,Long uid){
+       return lambdaUpdate()
+                .eq(User::getId,uid)
+                .set(User::getName,name)
+                .update();
+       //todo 删除缓存
     }
 
     private  User getUserByName(String name) {
