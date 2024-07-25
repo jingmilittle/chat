@@ -1,9 +1,10 @@
 package com.jingmi.chat.common.user.service;
 
 import com.jingmi.chat.common.user.domain.entity.User;
-import com.baomidou.mybatisplus.extension.service.IService;
-import com.jingmi.chat.common.user.domain.entity.vo.resp.UserInfoResp;
-import com.jingmi.chat.common.user.domain.vo.ModifyNameReq;
+import com.jingmi.chat.common.user.domain.vo.resp.BadgeResp;
+import com.jingmi.chat.common.user.domain.vo.resp.UserInfoResp;
+
+import java.util.List;
 
 /**
  * <p>
@@ -21,4 +22,8 @@ public interface UserService  {
     UserInfoResp getUserInfo(Long uid);
 
     void modifyName(String name, Long uid);
+
+    List<BadgeResp> badges(Long uid);
+
+    void wearingBadge(Long uid,Long badgeId);
 }

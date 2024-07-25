@@ -1,4 +1,4 @@
-package com.jingmi.chat.common.user.domain.entity.vo.resp;
+package com.jingmi.chat.common.user.domain.vo.resp;
 
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Builder;

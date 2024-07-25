@@ -7,6 +7,8 @@ import com.jingmi.chat.common.user.service.IUserBackpackService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 /**
  * <p>
  * 用户背包表 服务实现类
@@ -25,7 +27,7 @@ public class UserBackpackDao extends ServiceImpl<UserBackpackMapper, UserBackpac
                 .eq(UserBackpack::getStatus, YesOrNoEnums.NO.getStatus())
                 .count();
     }
-    //获取改名卡
+    //获取背包道具
     public UserBackpack getFirstValidItemByItemId(Long uid, Long itemId) {
        return   lambdaQuery()
                 .eq(UserBackpack::getUid,uid)
@@ -43,6 +45,22 @@ public class UserBackpackDao extends ServiceImpl<UserBackpackMapper, UserBackpac
                 .set(UserBackpack::getStatus, YesOrNoEnums.YES.getStatus())
                 .update();
 
+
+    }
+
+    public List<UserBackpack> getByItemIds(Long uid, List<Long> collect) {
+      return   lambdaQuery()
+                .eq(UserBackpack::getUid,uid)
+                .eq(UserBackpack::getStatus, YesOrNoEnums.NO.getStatus())
+                .in(UserBackpack::getItemId,collect)
+                .list();
+
+
+    }
+
+    public UserBackpack getByIdempotent(String idempotent) {
+       return lambdaQuery().
+                eq(UserBackpack::getIdempotent, idempotent).one();
 
     }
 }

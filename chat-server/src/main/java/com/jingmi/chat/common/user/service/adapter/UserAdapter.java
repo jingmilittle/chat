@@ -1,17 +1,20 @@
 package com.jingmi.chat.common.user.service.adapter;
 
 import cn.hutool.core.bean.BeanUtil;
-import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.RandomUtil;
 
+import com.jingmi.chat.common.common.domain.enums.YesOrNoEnums;
+import com.jingmi.chat.common.user.domain.entity.ItemConfig;
 import com.jingmi.chat.common.user.domain.entity.User;
-import com.jingmi.chat.common.user.domain.entity.vo.resp.UserInfoResp;
+import com.jingmi.chat.common.user.domain.entity.UserBackpack;
+import com.jingmi.chat.common.user.domain.vo.resp.BadgeResp;
+import com.jingmi.chat.common.user.domain.vo.resp.UserInfoResp;
 import lombok.extern.slf4j.Slf4j;
 import me.chanjar.weixin.common.bean.WxOAuth2UserInfo;
 
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -47,6 +50,25 @@ public class UserAdapter {
         UserInfoResp userInfoResp = BeanUtil.copyProperties(user, UserInfoResp.class);
         userInfoResp.setModifyNameChance(changeNameCardCount);
         return userInfoResp;
+
+    }
+
+    /**
+    * @Description: 组装返回数据 且根据佩戴 拥有来排序
+    * @Param: itemConfigs 所有徽章 backpacks用户背包里有的徽章  user用户当前佩戴的
+    * @return:
+    * @Author: jingmi
+    * @Date: 2024/7/23
+    */
+    public static List<BadgeResp> buildBadgeResp(List<ItemConfig> itemConfigs, List<UserBackpack> backpacks, User user) {
+        Set<Long> obtainItemSet = backpacks.stream().map(UserBackpack::getItemId).collect(Collectors.toSet());
+        return  itemConfigs.stream().map(itemConfig -> {
+            BadgeResp badgeResp = new BadgeResp();
+            BeanUtil.copyProperties(itemConfig, badgeResp);
+            badgeResp.setObtain(obtainItemSet.contains(itemConfig.getId()) ? YesOrNoEnums.YES.getStatus() : YesOrNoEnums.NO.getStatus());
+            badgeResp.setWearing(Objects.equals(itemConfig.getId(), user.getItemId()) ? YesOrNoEnums.YES.getStatus() : YesOrNoEnums.NO.getStatus());
+            return badgeResp;
+        }).sorted(Comparator.comparing(BadgeResp::getWearing, Comparator.reverseOrder()).thenComparing(BadgeResp::getObtain, Comparator.reverseOrder())).collect(Collectors.toList());
 
     }
 

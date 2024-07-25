@@ -3,6 +3,9 @@ import com.jingmi.chat.common.MallchatCustomApplication;
 import com.jingmi.chat.common.common.utils.JwtUtils;
 import com.jingmi.chat.common.user.dao.UserDao;
 import com.jingmi.chat.common.user.domain.entity.User;
+import com.jingmi.chat.common.user.domain.enums.IdempotentEnum;
+import com.jingmi.chat.common.user.domain.enums.ItemEnum;
+import com.jingmi.chat.common.user.service.IUserBackpackService;
 import com.jingmi.chat.common.user.service.LoginService;
 import me.chanjar.weixin.common.error.WxErrorException;
 import me.chanjar.weixin.mp.api.WxMpService;
@@ -39,6 +42,14 @@ public class DaoTest {
     private RedissonClient redissonClient;
     @Autowired
     private LoginService loginService;
+    @Autowired
+    private IUserBackpackService iUserBackpackService;
+    public static final Long UID =20001L;
+
+    @Test
+    public void acquireItem(){
+        iUserBackpackService.acquireItem(UID, ItemEnum.PLANET.getId(), IdempotentEnum.UID,UID+"");
+    }
     @Test
     public void jwt (){
         String token = jwtUtils.createToken(1L);

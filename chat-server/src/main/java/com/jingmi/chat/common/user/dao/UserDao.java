@@ -1,23 +1,25 @@
 package com.jingmi.chat.common.user.dao;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.generator.config.IFileCreate;
-import com.jingmi.chat.common.common.exception.BusinessException;
 import com.jingmi.chat.common.common.utils.AssertUtil;
+import com.jingmi.chat.common.user.domain.entity.ItemConfig;
 import com.jingmi.chat.common.user.domain.entity.User;
 import com.jingmi.chat.common.user.domain.entity.UserBackpack;
-import com.jingmi.chat.common.user.domain.entity.vo.resp.UserInfoResp;
+import com.jingmi.chat.common.user.domain.enums.ItemTypeEnum;
+import com.jingmi.chat.common.user.domain.vo.resp.BadgeResp;
+import com.jingmi.chat.common.user.domain.vo.resp.UserInfoResp;
 import com.jingmi.chat.common.user.domain.enums.ItemEnum;
-import com.jingmi.chat.common.user.domain.vo.ModifyNameReq;
 import com.jingmi.chat.common.user.mapper.UserMapper;
 import com.jingmi.chat.common.user.service.UserService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.jingmi.chat.common.user.service.adapter.UserAdapter;
+import com.jingmi.chat.common.user.service.cache.ItemCache;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Objects;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -30,7 +32,11 @@ import java.util.Objects;
 @Service
 public class UserDao extends ServiceImpl<UserMapper, User> implements UserService {
     @Autowired
+    private ItemCache itemCache;
+    @Autowired
     private UserBackpackDao userBackpackDao;
+    @Autowired
+    private ItemConfigDao itemConfigDao;
     public User getByOpenId(String openId) {
        return lambdaQuery().eq(User::getOpenId, openId).one();
     }
@@ -67,6 +73,40 @@ public class UserDao extends ServiceImpl<UserMapper, User> implements UserServic
 
 
     }
+
+
+    @Override
+    public List<BadgeResp> badges(Long uid) {
+        //所有徽章
+        List<ItemConfig> itemConfigs = itemCache.getByType(ItemTypeEnum.BADGE.getType());
+        //查询用户所持有徽章
+        List<UserBackpack> backpacks = userBackpackDao.getByItemIds(uid, itemConfigs.stream().map(ItemConfig::getId).collect(Collectors.toList()));
+        //当前佩戴的
+        User user  = this.getById(uid);
+        return UserAdapter.buildBadgeResp(itemConfigs,backpacks,user);
+
+
+    }
+    /**
+    * 切换徽章
+     */
+
+    @Override
+    public void wearingBadge(Long uid,Long itemId) {
+        UserBackpack firstValidItemByItemId = userBackpackDao.getFirstValidItemByItemId(uid, itemId);
+        AssertUtil.isNotEmpty(firstValidItemByItemId,"该徽章不存在");
+        ItemConfig itemConfig = itemConfigDao.getById(firstValidItemByItemId.getItemId());
+        AssertUtil.equal(itemConfig.getType(),ItemTypeEnum.BADGE.getType(),"该物品不是徽章");
+        this.changeBadge( uid, itemId);
+    }
+
+    private void changeBadge(Long uid, Long itemId) {
+        lambdaUpdate()
+                .eq(User::getId,uid)
+                .set(User::getItemId,itemId)
+                .update();
+    }
+
     private boolean changeName(String name,Long uid){
        return lambdaUpdate()
                 .eq(User::getId,uid)
