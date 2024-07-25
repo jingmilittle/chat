@@ -3,6 +3,7 @@ package com.jingmi.chat.common.user.service.Impl;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.jingmi.chat.common.common.domain.enums.YesOrNoEnums;
+import com.jingmi.chat.common.common.service.LockService;
 import com.jingmi.chat.common.common.utils.AssertUtil;
 import com.jingmi.chat.common.user.dao.UserBackpackDao;
 import com.jingmi.chat.common.user.domain.entity.UserBackpack;
@@ -28,6 +29,8 @@ import java.util.function.Function;
 @Service
 public class IUserBackpackServiceImpl implements IUserBackpackService {
     @Autowired
+    private LockService lockService;
+    @Autowired
     private RedissonClient redissonClient;
     @Autowired
     private UserBackpackDao userBackpackDao;
@@ -41,13 +44,10 @@ public class IUserBackpackServiceImpl implements IUserBackpackService {
     @Override
     public void acquireItem(Long userId, Long itemId, IdempotentEnum idempotentEnum, String businessId) {
         String idempotent = getIdempotent(itemId, idempotentEnum, businessId);
-        RLock lock = redissonClient.getLock("acquireItem" + idempotent);
-        boolean b = lock.tryLock();
-        AssertUtil.isTrue(b,"请求太频繁了");
-        try {
+        lockService.executeWithLock("acquireItem" + idempotent,()->{
             UserBackpack byIdempotent = userBackpackDao.getByIdempotent(idempotent);
             if (Objects.nonNull(byIdempotent)){
-                return;
+                return ;
             }
             //业务检查
             //发放物品
@@ -58,9 +58,10 @@ public class IUserBackpackServiceImpl implements IUserBackpackService {
                     .idempotent(idempotent)
                     .build();
             userBackpackDao.save(insert);
-        } finally {
-            lock.unlock();
-        }
+
+        });
+
+
     }
 
     /**
