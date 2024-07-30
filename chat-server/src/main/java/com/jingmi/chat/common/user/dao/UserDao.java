@@ -1,5 +1,6 @@
 package com.jingmi.chat.common.user.dao;
 
+import com.jingmi.chat.common.common.event.UserRegisterEvent;
 import com.jingmi.chat.common.common.utils.AssertUtil;
 import com.jingmi.chat.common.user.domain.entity.ItemConfig;
 import com.jingmi.chat.common.user.domain.entity.User;
@@ -15,6 +16,7 @@ import com.jingmi.chat.common.user.service.adapter.UserAdapter;
 import com.jingmi.chat.common.user.service.cache.ItemCache;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +39,8 @@ public class UserDao extends ServiceImpl<UserMapper, User> implements UserServic
     private UserBackpackDao userBackpackDao;
     @Autowired
     private ItemConfigDao itemConfigDao;
+    @Autowired
+    private ApplicationEventPublisher applicationEventPublisher;
     public User getByOpenId(String openId) {
        return lambdaQuery().eq(User::getOpenId, openId).one();
     }
@@ -44,7 +48,8 @@ public class UserDao extends ServiceImpl<UserMapper, User> implements UserServic
     @Override
     public Long register(User user) {
          this.save(user);
-        //用户注册事件
+        // todo 用户注册事件
+        applicationEventPublisher.publishEvent(new UserRegisterEvent( this,user));
      return  user.getId();
 
     }

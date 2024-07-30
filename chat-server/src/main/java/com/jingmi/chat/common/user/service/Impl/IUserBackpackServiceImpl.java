@@ -2,6 +2,7 @@ package com.jingmi.chat.common.user.service.Impl;
 
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.jingmi.chat.common.common.annotation.RedissonLock;
 import com.jingmi.chat.common.common.domain.enums.YesOrNoEnums;
 import com.jingmi.chat.common.common.service.LockService;
 import com.jingmi.chat.common.common.utils.AssertUtil;
@@ -12,6 +13,7 @@ import com.jingmi.chat.common.user.service.IUserBackpackService;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
@@ -34,6 +36,10 @@ public class IUserBackpackServiceImpl implements IUserBackpackService {
     private RedissonClient redissonClient;
     @Autowired
     private UserBackpackDao userBackpackDao;
+    @Autowired
+    @Lazy
+    private  IUserBackpackServiceImpl iUserBackpackService;
+
     /**
      * @Description: 用户发放物品
      * @Param: userId 用户id itemId 物品id idempotentEnum 幂等性枚举 businessId 业务id
@@ -44,7 +50,10 @@ public class IUserBackpackServiceImpl implements IUserBackpackService {
     @Override
     public void acquireItem(Long userId, Long itemId, IdempotentEnum idempotentEnum, String businessId) {
         String idempotent = getIdempotent(itemId, idempotentEnum, businessId);
-        lockService.executeWithLock("acquireItem" + idempotent,()->{
+        iUserBackpackService.doAcquireItem(userId,itemId,idempotent);
+    }
+    @RedissonLock(key="#idempotent",waitTime = 5000)
+    public void doAcquireItem(Long userId, Long itemId,String idempotent){
             UserBackpack byIdempotent = userBackpackDao.getByIdempotent(idempotent);
             if (Objects.nonNull(byIdempotent)){
                 return ;
@@ -58,8 +67,6 @@ public class IUserBackpackServiceImpl implements IUserBackpackService {
                     .idempotent(idempotent)
                     .build();
             userBackpackDao.save(insert);
-
-        });
 
 
     }
